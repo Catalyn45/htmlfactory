@@ -53,7 +53,22 @@ func walkHtml(n *html.Node) {
 	}
 }
 
+var queue StringQueue
+
 func templateFile(fileName string, outdir *string) {
+	fullPath, err := filepath.Abs(fileName)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	ok := queue.push(fullPath)
+	if !ok {
+		fmt.Println("circular fragment import")
+		return
+	}
+	defer queue.pop()
+
 	doc, err := parseFile(fileName)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -115,6 +130,19 @@ func replaceTemplate(n *html.Node) {
 	if !ok {
 		return
 	}
+
+	fullPath, err := filepath.Abs(source)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	ok = queue.push(fullPath)
+	if !ok {
+		fmt.Println("circular fragment import")
+		return
+	}
+	defer queue.pop()
 
 	docs, err := parseFragmentFile(source, n.Parent)
 	if err != nil {
