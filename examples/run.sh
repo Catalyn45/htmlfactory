@@ -1,0 +1,1 @@
+../htmlfactory --out=./out .
