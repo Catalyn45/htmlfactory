@@ -25,7 +25,7 @@ example:
 
 2. Run the tool on your html file
 ```sh
-.\htmlfactory.exe ./page.html`
+.\htmlfactory.exe ./page.html
 ```
 
 3. This will produce your newly html file, `page.compiled.html`:
