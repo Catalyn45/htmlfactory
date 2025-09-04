@@ -22,10 +22,10 @@ jobs:
         go-version: '1.23.0'
 
     - name: Build for Linux
-      run: go build -v ./...
+      run: go build -v ./... -o htmlbuilder
 
     - name: Build for Windows
-      run: GOOS=windows GOARCH=amd64 go build -v ./...
+      run: GOOS=windows GOARCH=amd64 go build -v ./... -o htmlbuilder.exe
 
     - name: Upload Linux binary
       uses: actions/upload-artifact@v4
