@@ -26,3 +26,16 @@ jobs:
 
     - name: Build for Windows
       run: GOOS=windows GOARCH=amd64 go build -v ./...
+
+    - name: Upload Linux binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: htmlbuilder
+        path: htmlbuilder
+
+    - name: Upload Windows binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: htmlbuilder.exe
+        path: htmlbuilder.exe
+
