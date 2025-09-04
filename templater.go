@@ -26,32 +26,69 @@ func parseFile(fileName string) (*html.Node, error) {
 	return doc, nil
 }
 
-func templateFile(fileName string) {
+func parseFragmentFile(fileName string, context *html.Node) ([]*html.Node, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer file.Close()
+
+	docs, err := html.ParseFragment(file, context)
+	if err != nil {
+		return nil, err
+	}
+
+	return docs, nil
+}
+
+const fragmentTag = "fragment"
+
+func walkHtml(n *html.Node) {
+	if n.Type == html.ElementNode && n.Data == fragmentTag {
+		replaceTemplate(n)
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		walkHtml(c)
+	}
+}
+
+func templateFile(fileName string, outdir *string) {
 	doc, err := parseFile(fileName)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	var f func(*html.Node)
-	f = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "factory" {
-			fmt.Println("Found factory")
-
-			replaceTemplate(n)
-		}
-
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			f(c)
-		}
-	}
-	f(doc)
+	walkHtml(doc)
 
 	rendered := RenderHTMLIndented(doc)
 
-    ext := filepath.Ext(fileName)
-    base := strings.TrimSuffix(fileName, ext)
-    newName := fmt.Sprintf("%s.compiled.%s", base, ext[1:])
+	var newName string
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	abs1, err := filepath.Abs(cwd)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	abs2, err := filepath.Abs(*outdir)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if abs1 == abs2 {
+		ext := filepath.Ext(fileName)
+		base := strings.TrimSuffix(fileName, ext)
+		newName = fmt.Sprintf("%s.compiled.%s", base, ext[1:])
+	} else {
+		newName = filepath.Join(*outdir, fileName)
+	}
 
 	err = os.WriteFile(newName, []byte(rendered), 0644)
 	if err != nil {
@@ -60,38 +97,35 @@ func templateFile(fileName string) {
 	}
 }
 
-// helper function to extract text content
-func replaceTemplate(n *html.Node) {
+func getVariables(n *html.Node) map[string]string {
 	variables := make(map[string]string)
-	var source string
 
 	for _, attr := range n.Attr {
-		if attr.Key == "src" {
-			fmt.Println("class attribute:", attr.Val)
-			source = attr.Val
-		} else {
-			variables[attr.Key] = attr.Val
-		}
+		variables[attr.Key] = attr.Val
 	}
 
-	if source == "" {
+	return variables
+}
+
+// helper function to extract text content
+func replaceTemplate(n *html.Node) {
+	variables := getVariables(n)
+
+	source, ok := variables["src"]
+	if !ok {
 		return
 	}
 
-	file, err := os.Open(source)
+	docs, err := parseFragmentFile(source, n.Parent)
 	if err != nil {
 		fmt.Println(err.Error())
+		return
 	}
 
-	defer file.Close()
-
-	docs, err := html.ParseFragment(file, n.Parent)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	
 	for _, doc := range docs {
 		replaceVariables(doc, variables)
+		walkHtml(doc)
+
 		n.Parent.InsertBefore(doc, n)
 	}
 
@@ -102,49 +136,35 @@ func replaceTemplate(n *html.Node) {
 
 var re = regexp.MustCompile(`\$\{([A-Za-z_]+[A-Za-z_0-9]*)\}`)
 
+func replaceVar(data string, variables map[string]string) string {
+	matches := re.FindAllStringSubmatch(data, -1)
+
+	for _, match := range matches {
+		variableName := match[1]
+
+		variableValue, ok := variables[variableName]
+		if ok {
+			 data = re.ReplaceAllString(data, variableValue)
+		}
+	}
+
+	return data
+}
+
 func replaceVariables(n *html.Node, variables map[string]string) {
+	if n.Type == html.ElementNode && n.Data == "script" {
+		return
+	}
+
 	if n.Data != "" {
-		matches := re.FindAllStringSubmatch(n.Data, -1)
-		for _, match := range matches {
-			// match[1] contains the variable name inside ${...}
-			variableName := match[1]
-			fmt.Println(variableName)
-
-			variableValue, ok := variables[variableName]
-			if ok {
-				result := re.ReplaceAllString(n.Data, variableValue)
-				n.Data = result
-			}
-		}
+		n.Data = replaceVar(n.Data, variables)
 	}
 
-	if len(n.Attr) > 0 {
-		for i, attr := range n.Attr {
-			for index, data := range []string {attr.Key, attr.Val} {
-				matches := re.FindAllStringSubmatch(data, -1)
-				for _, match := range matches {
-					// match[1] contains the variable name inside ${...}
-					variableName := match[1]
-					fmt.Println(variableName)
-
-					variableValue, ok := variables[variableName]
-					if ok {
-						result := re.ReplaceAllString(data, variableValue)
-
-						if index == 0 {
-							attr.Key = result
-						} else {
-							attr.Val = result
-						}
-					}
-				}
-
-				n.Attr[i] = attr
-			}
-		}
+	for i, attr := range n.Attr {
+		n.Attr[i].Key = replaceVar(attr.Key, variables)
+		n.Attr[i].Val = replaceVar(attr.Val, variables)
 	}
 
-	// Recurse to children
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		replaceVariables(c, variables)
 	}
