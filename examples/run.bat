@@ -1,0 +1,1 @@
+..\htmlfactory.exe --out=./out .
