@@ -53,17 +53,38 @@ func parseFragmentFile(fileName string, context *html.Node) ([]*html.Node, error
 
 const fragmentTag = "fragment"
 
-func (self *Templater) walkHtml(n *html.Node) {
+func (self *Templater) walkHtml(n *html.Node, content []*html.Node) {
 	if n.Type == html.ElementNode && n.Data == fragmentTag {
 		self.replaceTemplate(n)
 		return
+	}
+
+	fragmentContent := false
+	newAttrs := []html.Attribute{}
+	if content != nil && n.Type == html.ElementNode {
+		for _, attr := range n.Attr {
+			if attr.Key == "content" && attr.Val == "fragment" {
+				fragmentContent = true
+			} else {
+				newAttrs = append(newAttrs, attr)
+			}
+		}
+	}
+
+	if fragmentContent {
+		n.Attr = newAttrs
+
+		for _, c := range content {
+			newC := *c
+			n.AppendChild(&newC)
+		}
 	}
 
 	var nextSibling *html.Node
 	for c := n.FirstChild; c != nil; c = nextSibling {
 		nextSibling = c.NextSibling
 
-		self.walkHtml(c)
+		self.walkHtml(c, content)
 	}
 }
 
@@ -93,7 +114,7 @@ func (self *Templater) templateFile() {
 		return
 	}
 
-	self.walkHtml(doc)
+	self.walkHtml(doc, nil)
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -170,9 +191,19 @@ func (self *Templater) replaceTemplate(n *html.Node) {
 		return
 	}
 
+	orphanChilds := []*html.Node {}
+	var nextSibling *html.Node
+	for c := n.FirstChild; c != nil; c = nextSibling {
+		nextSibling = c.NextSibling
+
+		n.RemoveChild(c)
+
+		orphanChilds = append(orphanChilds, c)
+	}
+
 	for _, doc := range docs {
 		replaceVariables(doc, variables)
-		self.walkHtml(doc)
+		self.walkHtml(doc, orphanChilds)
 
 		n.Parent.InsertBefore(doc, n)
 	}
