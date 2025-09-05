@@ -1,10 +1,13 @@
 package main
 
-import "flag"
-import "os"
-import "fmt"
-import "strings"
-import "path/filepath"
+import (
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+)
 
 func main() {
 	outDir := flag.String("out", ".", "Path to output directory")
@@ -38,7 +41,12 @@ func main() {
 	}
 
 	if !info.IsDir() {
-		templateFile(args[0], outDir)
+		templater := Templater {
+			fileName: args[0],
+			outdir: *outDir,
+		}
+
+		go templater.templateFile()
 		return
 	}
 
@@ -48,12 +56,25 @@ func main() {
 		os.Exit(1)
 	}
 
+	var wg sync.WaitGroup
+
 	for _, f := range files {
 		if !f.IsDir() &&
 		strings.HasSuffix(f.Name(), ".html") &&
 		!strings.HasSuffix(f.Name(), ".compiled.html") {
 			fullPath := filepath.Join(args[0], f.Name())
-			templateFile(fullPath, outDir)
+
+			templater := Templater {
+				fileName: fullPath,
+				outdir: *outDir,
+				wg: &wg,
+			}
+
+			wg.Add(1)
+
+			go templater.templateFile()
 		}
 	}
+
+	wg.Wait()
 }

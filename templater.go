@@ -8,13 +8,23 @@ import (
 
 	"path/filepath"
 
+	"sync"
+
 	"golang.org/x/net/html"
 )
+
+type Templater struct {
+	fileName string
+	outdir string
+	queue StringQueue
+	wg *sync.WaitGroup
+}
 
 func parseFile(fileName string) (*html.Node, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println(err.Error())
+		return nil, err
 	}
 	defer file.Close()
 
@@ -43,43 +53,48 @@ func parseFragmentFile(fileName string, context *html.Node) ([]*html.Node, error
 
 const fragmentTag = "fragment"
 
-func walkHtml(n *html.Node) {
+func (self *Templater) walkHtml(n *html.Node) {
 	if n.Type == html.ElementNode && n.Data == fragmentTag {
-		replaceTemplate(n)
+		self.replaceTemplate(n)
+		return
 	}
 
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		walkHtml(c)
+	var nextSibling *html.Node
+	for c := n.FirstChild; c != nil; c = nextSibling {
+		nextSibling = c.NextSibling
+
+		self.walkHtml(c)
 	}
 }
 
-var queue StringQueue
+func (self *Templater) templateFile() {
+	defer func() {
+		if self.wg != nil{
+			self.wg.Done()
+		}
+	}()
 
-func templateFile(fileName string, outdir *string) {
-	fullPath, err := filepath.Abs(fileName)
+	fullPath, err := filepath.Abs(self.fileName)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	ok := queue.push(fullPath)
+	ok := self.queue.push(fullPath)
 	if !ok {
 		fmt.Println("circular fragment import")
 		return
 	}
-	defer queue.pop()
+	defer self.queue.pop()
 
-	doc, err := parseFile(fileName)
+	doc, err := parseFile(self.fileName)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	walkHtml(doc)
+	self.walkHtml(doc)
 
-	rendered := RenderHTMLIndented(doc)
-
-	var newName string
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -91,25 +106,30 @@ func templateFile(fileName string, outdir *string) {
 		return
 	}
 
-	abs2, err := filepath.Abs(*outdir)
+	abs2, err := filepath.Abs(self.outdir)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
+	var newName string
 	if abs1 == abs2 {
-		ext := filepath.Ext(fileName)
-		base := strings.TrimSuffix(fileName, ext)
+		ext := filepath.Ext(self.fileName)
+		base := strings.TrimSuffix(self.fileName, ext)
 		newName = fmt.Sprintf("%s.compiled.%s", base, ext[1:])
 	} else {
-		newName = filepath.Join(*outdir, fileName)
+		newName = filepath.Join(self.outdir, self.fileName)
 	}
 
-	err = os.WriteFile(newName, []byte(rendered), 0644)
+	file, err := os.OpenFile(newName, os.O_CREATE | os.O_WRONLY |  os.O_TRUNC, 0644)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
+
+	defer file.Close()
+
+	html.Render(file, doc)
 }
 
 func getVariables(n *html.Node) map[string]string {
@@ -123,7 +143,7 @@ func getVariables(n *html.Node) map[string]string {
 }
 
 // helper function to extract text content
-func replaceTemplate(n *html.Node) {
+func (self *Templater) replaceTemplate(n *html.Node) {
 	variables := getVariables(n)
 
 	source, ok := variables["src"]
@@ -137,12 +157,12 @@ func replaceTemplate(n *html.Node) {
 		return
 	}
 
-	ok = queue.push(fullPath)
+	ok = self.queue.push(fullPath)
 	if !ok {
 		fmt.Println("circular fragment import")
 		return
 	}
-	defer queue.pop()
+	defer self.queue.pop()
 
 	docs, err := parseFragmentFile(source, n.Parent)
 	if err != nil {
@@ -152,29 +172,27 @@ func replaceTemplate(n *html.Node) {
 
 	for _, doc := range docs {
 		replaceVariables(doc, variables)
-		walkHtml(doc)
+		self.walkHtml(doc)
 
 		n.Parent.InsertBefore(doc, n)
 	}
 
 	n.Parent.RemoveChild(n)
-
-	return
 }
 
 var re = regexp.MustCompile(`\$\{([A-Za-z_]+[A-Za-z_0-9]*)\}`)
 
 func replaceVar(data string, variables map[string]string) string {
-	matches := re.FindAllStringSubmatch(data, -1)
-
-	for _, match := range matches {
-		variableName := match[1]
+	data = re.ReplaceAllStringFunc(data, func (match string) string {
+		variableName := re.FindStringSubmatch(match)[1]
 
 		variableValue, ok := variables[variableName]
 		if ok {
-			 data = re.ReplaceAllString(data, variableValue)
+			return variableValue
 		}
-	}
+
+		return match
+	})
 
 	return data
 }

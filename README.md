@@ -13,12 +13,12 @@ Options:
         Path to output directory (default ".")
 ```
 
-1. Write your html files, and where you want to insert a template, just use: `<fragment src="./template.html">`.
+1. Write your html files, and where you want to insert a template, just use: `<fragment src="./template.html"></fragment>`.
 example:
 ```html
 <html>
     <head>
-        <fragment src="./templates/part.html">
+        <fragment src="./templates/part.html"></fragment>
     </head>
 </html>
 ```
@@ -40,7 +40,7 @@ example:
 # Advantages
 - Statically compiling your templates into your pages, 0 runtime cost
 - You don't need to learn yet another new templating language, just the one you already now, html and js:
-    - use  `<fragment src="./template.html">` to insert a fragment
-    - use `<fragment src="./template.html" my_var="helo">` to send variables to templates
+    - use  `<fragment src="./template.html"></fragment>` to insert a fragment
+    - use `<fragment src="./template.html" my_var="helo"></fragment>` to send variables to templates
     - use `${my_var}` inside your fragments to use the variable. (ex. `<title>${my_var}</title>`)
 - It's not a giant website generation tool with required file names and directory hierarchy, you just compile templates into your pages to avoid repetition
