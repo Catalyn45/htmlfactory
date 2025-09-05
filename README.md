@@ -8,7 +8,7 @@ Very simple tool to statically do templating with your html files.
     - use  `<fragment src="./template.html"></fragment>` to insert a fragment
     - use `<fragment src="./template.html" my_var="helo"></fragment>` to send variables to fragments
     - use `${my_var}` inside your fragments to use the variable. (ex. `<title>${my_var}</title>`)
-    - use `<any_tag content="fragment> </any_tag>` in your fragment to insert the content of `<fragment>` tag in your fragment
+    - use `<any_tag content="fragment"> </any_tag>` in your fragment to insert the content of `<fragment>` tag in your fragment
 - It's not a giant website generation tool with required file names and directory hierarchy, you just compile templates into your pages to avoid repetition
 
 ## Limitations
