@@ -40,10 +40,14 @@ func main() {
 		return
 	}
 
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	if !info.IsDir() {
 		templater := Templater {
 			fileName: args[0],
 			outdir: *outDir,
+			wg: &wg,
 		}
 
 		go templater.templateFile()
@@ -55,8 +59,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-
-	var wg sync.WaitGroup
 
 	for _, f := range files {
 		if !f.IsDir() &&
@@ -71,10 +73,7 @@ func main() {
 			}
 
 			wg.Add(1)
-
 			go templater.templateFile()
 		}
 	}
-
-	wg.Wait()
 }

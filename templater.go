@@ -89,11 +89,7 @@ func (self *Templater) walkHtml(n *html.Node, content []*html.Node) {
 }
 
 func (self *Templater) templateFile() {
-	defer func() {
-		if self.wg != nil{
-			self.wg.Done()
-		}
-	}()
+	defer self.wg.Done()
 
 	fullPath, err := filepath.Abs(self.fileName)
 	if err != nil {
