@@ -2,6 +2,19 @@
 
 Very simple tool to statically do templating with your html files.
 
+## Advantages
+- Statically compiling your templates into your pages, 0 runtime cost
+- You don't need to learn yet another new templating language, just the ones you already now, html and js:
+    - use  `<fragment src="./template.html"></fragment>` to insert a fragment
+    - use `<fragment src="./template.html" my_var="helo"></fragment>` to send variables to fragments
+    - use `${my_var}` inside your fragments to use the variable. (ex. `<title>${my_var}</title>`)
+    - use `<any_tag content="fragment> </any_tag>` in your fragment to insert the content of `<fragment>` tag in your fragment
+- It's not a giant website generation tool with required file names and directory hierarchy, you just compile templates into your pages to avoid repetition
+
+## Limitations
+- You can't put fragments directly into the `<html>` tag, they need to be either in `<body>` or `<head>`
+- The output html file will be correct but not formatted, this is how the `html.Render()` function makes it. A prettier renderer may be added to this project in the future.
+
 ## Usage
 
 ```sh
@@ -93,14 +106,3 @@ The result will be
     </head>
 </html>
 ```
-
-<hr>
-
-# Advantages
-- Statically compiling your templates into your pages, 0 runtime cost
-- You don't need to learn yet another new templating language, just the one you already now, html and js:
-    - use  `<fragment src="./template.html"></fragment>` to insert a fragment
-    - use `<fragment src="./template.html" my_var="helo"></fragment>` to send variables to templates
-    - use `${my_var}` inside your fragments to use the variable. (ex. `<title>${my_var}</title>`)
-    - use `<any_tag content="fragment> </any_tag>` in your fragment to insert the block content
-- It's not a giant website generation tool with required file names and directory hierarchy, you just compile templates into your pages to avoid repetition
