@@ -37,10 +37,70 @@ example:
 </html>
 ```
 
+## Features
+
+### Variables
+In your main file you can have
+```html
+<html>
+    <head>
+        <fragment src="./templates/part.html" abc="10"></fragment>
+    </head>
+</html>
+```
+
+Then in the fragment:
+```html
+<h1> hello ${abc} </h1>
+```
+
+The result will be 
+```html
+<html>
+    <head>
+        <h1> hello 10 </h1>
+    </head>
+</html>
+```
+
+<hr>
+
+### Block replacement
+In your main file you can have
+```html
+<html>
+    <head>
+        <fragment src="./templates/part.html">
+          <p> Hello </p>
+        </fragment>
+    </head>
+</html>
+```
+
+Then in the fragment:
+```html
+<div content="fragment">
+</div>
+```
+
+The result will be 
+```html
+<html>
+    <head>
+        <div>
+          <p> Hello </p>
+        </div>
+    </head>
+</html>
+```
+
+<hr>
+
 # Advantages
 - Statically compiling your templates into your pages, 0 runtime cost
 - You don't need to learn yet another new templating language, just the one you already now, html and js:
     - use  `<fragment src="./template.html"></fragment>` to insert a fragment
     - use `<fragment src="./template.html" my_var="helo"></fragment>` to send variables to templates
     - use `${my_var}` inside your fragments to use the variable. (ex. `<title>${my_var}</title>`)
+    - use `<any_tag content="fragment> </any_tag>` in your fragment to insert the block content
 - It's not a giant website generation tool with required file names and directory hierarchy, you just compile templates into your pages to avoid repetition
