@@ -153,7 +153,7 @@ func getVariables(n *html.Node) map[string]string {
 	variables := make(map[string]string)
 
 	for _, attr := range n.Attr {
-		variables[attr.Key] = attr.Val
+		variables[strings.ToLower(attr.Key)] = attr.Val
 	}
 
 	return variables
@@ -211,14 +211,15 @@ var re = regexp.MustCompile(`\$\{([A-Za-z_]+[A-Za-z_0-9]*)\}`)
 
 func replaceVar(data string, variables map[string]string) string {
 	data = re.ReplaceAllStringFunc(data, func (match string) string {
-		variableName := re.FindStringSubmatch(match)[1]
+		matchSubstrings := re.FindStringSubmatch(match)
+		variableName := strings.ToLower(matchSubstrings[1])
 
 		variableValue, ok := variables[variableName]
 		if ok {
 			return variableValue
 		}
 
-		return match
+		return matchSubstrings[0]
 	})
 
 	return data

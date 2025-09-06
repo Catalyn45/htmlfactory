@@ -12,7 +12,7 @@ Very simple tool to statically do templating with your html files.
 - It's not a giant website generation tool with required file names and directory hierarchy, you just compile templates into your pages to avoid repetition
 
 ## Limitations
-- You can't put fragments directly into the `<html>` tag, they need to be either in `<body>` or `<head>`
+- You can't put fragments directly into the `<html>` or `<head>` tags, they need to be in `<body>`.
 - The output html file will be correct but not formatted, this is how the `html.Render()` function makes it. A prettier renderer may be added to this project in the future.
 
 ## Usage
