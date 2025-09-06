@@ -32,9 +32,9 @@ Options:
 example:
 ```html
 <html>
-    <head>
+    <body>
         <fragment src="./templates/part.html"></fragment>
-    </head>
+    </body>
 </html>
 ```
 
@@ -46,9 +46,9 @@ example:
 3. This will produce your newly html file, `page.compiled.html`:
 ```html
 <html>
-    <head>
-        <title>hey</title>
-    </head>
+    <body>
+        <p>hey</p>
+    </body>
 </html>
 ```
 
@@ -58,9 +58,9 @@ example:
 In your main file you can have
 ```html
 <html>
-    <head>
+    <body>
         <fragment src="./templates/part.html" abc="10"></fragment>
-    </head>
+    </body>
 </html>
 ```
 
@@ -72,9 +72,9 @@ Then in the fragment:
 The result will be 
 ```html
 <html>
-    <head>
+    <body>
         <h1> hello 10 </h1>
-    </head>
+    </body>
 </html>
 ```
 
@@ -84,11 +84,11 @@ The result will be
 In your main file you can have
 ```html
 <html>
-    <head>
+    <body>
         <fragment src="./templates/part.html">
           <p> Hello </p>
         </fragment>
-    </head>
+    </body>
 </html>
 ```
 
@@ -101,10 +101,10 @@ Then in the fragment:
 The result will be 
 ```html
 <html>
-    <head>
+    <body>
         <div>
           <p> Hello </p>
         </div>
-    </head>
+    </body>
 </html>
 ```
