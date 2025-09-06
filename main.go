@@ -4,14 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
-	"sync"
 )
 
 func main() {
 	outDir := flag.String("out", ".", "Path to output directory")
 	help := flag.Bool("help", false, "Show usage")
+	watch := flag.Bool("watch", false, "keep watching for modified files and template them")
 
 	// Customize usage output
 	flag.Usage = func() {
@@ -34,46 +32,16 @@ func main() {
 		return
 	}
 
-	info, err := os.Stat(args[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		return
-	}
-
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
-	if !info.IsDir() {
-		templater := Templater {
-			fileName: args[0],
-			outdir: *outDir,
-			wg: &wg,
+	if *watch {
+		watcher := newWatcher(args[0], *outDir)
+		watcher.run()
+	} else {
+		files, err := getFiles(args[0])
+		if err != nil {
+			fmt.Println(err.Error())
+			return
 		}
 
-		go templater.templateFile()
-		return
-	}
-
-	files, err := os.ReadDir(args[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	for _, f := range files {
-		if !f.IsDir() &&
-		strings.HasSuffix(f.Name(), ".html") &&
-		!strings.HasSuffix(f.Name(), ".compiled.html") {
-			fullPath := filepath.Join(args[0], f.Name())
-
-			templater := Templater {
-				fileName: fullPath,
-				outdir: *outDir,
-				wg: &wg,
-			}
-
-			wg.Add(1)
-			go templater.templateFile()
-		}
+		templateFiles(files, *outDir)
 	}
 }

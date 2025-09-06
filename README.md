@@ -24,6 +24,8 @@ Options:
         Show usage
   --out string
         Path to output directory (default ".")
+  --watch
+        keep watching for modified files and template them
 ```
 
 1. Write your html files, and where you want to insert a template, just use: `<fragment src="./template.html"></fragment>`.
