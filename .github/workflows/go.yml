@@ -22,20 +22,20 @@ jobs:
         go-version: '1.23.0'
 
     - name: Build for Linux
-      run: go build -v -o htmlbuilder ./...
+      run: go build -v -o htmlfactory ./...
 
     - name: Build for Windows
-      run: GOOS=windows GOARCH=amd64 go build -v -o htmlbuilder.exe ./...
+      run: GOOS=windows GOARCH=amd64 go build -v -o htmlfactory.exe ./...
 
     - name: Upload Linux binary
       uses: actions/upload-artifact@v4
       with:
-        name: htmlbuilder
-        path: htmlbuilder
+        name: htmlfactory
+        path: htmlfactory
 
     - name: Upload Windows binary
       uses: actions/upload-artifact@v4
       with:
-        name: htmlbuilder.exe
-        path: htmlbuilder.exe
+        name: htmlfactory.exe
+        path: htmlfactory.exe
 
