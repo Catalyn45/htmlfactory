@@ -10,7 +10,7 @@ import (
 
 	"sync"
 
-	"golang.org/x/net/html"
+	"github.com/Catalyn45/net-html"
 )
 
 type Templater struct {

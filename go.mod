@@ -4,7 +4,4 @@ go 1.23.0
 
 toolchain go1.24.6
 
-require (
-	github.com/yosssi/gohtml v0.0.0-20201013000340-ee4748c638f4 // indirect
-	golang.org/x/net v0.43.0 // indirect
-)
+require github.com/Catalyn45/net-html v0.0.0-20250908150356-e9b3dcd226a7 // indirect
